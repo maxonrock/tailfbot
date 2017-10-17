@@ -25,19 +25,17 @@ class TailBot:
         resp = requests.post(self.api_url + method, params)
         return resp
 
-    def get_last_update(self):
-        get_result = self.get_updates()
-
+    def get_last_update(self, offset):
+        get_result = self.get_updates(offset)
+        last_update = None
         if len(get_result) > 0:
-            last_update = get_result[-1]
-        else:
-            last_update = get_result[len(get_result)]
-
+            last_update = get_result[len(get_result) - 1]
         return last_update
 
     def get_last_message(self, offset):
-        bot.get_updates(offset)
-        last_update = bot.get_last_update()
+        last_update = self.get_last_update(offset)
+        if last_update == None:
+            return None
         result = {}
         result['text'] = ''
         result['chat_id'] = None
@@ -54,6 +52,7 @@ class TailBot:
         result['chat_id'] = last_message['chat']['id']
         result['chat_name'] = last_message['chat']['first_name']
         return result
+
 
 
 def get_log(path, count):
@@ -80,9 +79,12 @@ def get_help(config):
 
 
 def main(config):
+    bot = TailBot(config['token']['value'])
     offset = None
     while True:
         last_message = bot.get_last_message(offset)
+        if last_message == None:
+            continue
         message = last_message['chat_name'] + ", this сommand is not supported"
         limit = ''.join([i if i.isdigit() else '' for i in last_message['text']])
         if not limit.isdigit():
@@ -125,7 +127,6 @@ if __name__ == '__main__':
         config = configparser.ConfigParser()
         config.read('send.cfg')
         validate_config(config)
-        bot = TailBot(config['token']['value'])
         main(config)
     except KeyboardInterrupt:
         exit()
