@@ -8,9 +8,9 @@ default_limit = 1
 
 
 class TailBot:
-    def __init__(self, token):
+    def __init__(self, base_url, token):
         self.token = token
-        self.api_url = "https://api.telegram.org/bot{}/".format(token)
+        self.api_url = base_url + "/bot{}/".format(token)
 
     def get_updates(self, offset=None, timeout=1000):
         method = 'getUpdates'
@@ -54,7 +54,6 @@ class TailBot:
         return result
 
 
-
 def get_log(path, count):
     try:
         with open(path, 'r') as target_file:
@@ -79,7 +78,7 @@ def get_help(config):
 
 
 def main(config):
-    bot = TailBot(config['token']['value'])
+    bot = TailBot(config['base']['url'], config['base']['token'])
     offset = None
     while True:
         last_message = bot.get_last_message(offset)
@@ -105,10 +104,20 @@ def main(config):
         offset = last_message['update_id'] + 1
 
 
-required_config = {'paths', 'token'}
+required_config = {'base', 'paths'}
 
 
 def validate_config(config):
+    try:
+        base_url_found = config['base']['url']
+    except KeyError:
+        print ('Base URL not found')
+        exit()
+    try:
+        token_found = config['base']['token']
+    except KeyError:
+        print ('Bot token not found')
+        exit()
     for required_section in required_config:
         if not required_section in config:
             print('Config parse error: section "%s" is not found' % required_section)
